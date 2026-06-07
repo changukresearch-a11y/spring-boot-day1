@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,6 +30,7 @@ SecurityConfig {
     private final RestAccessDeniedHandler accessDeniedHandler;
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final CorsConfigurationSource corsConfigurationSource;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -55,6 +57,10 @@ SecurityConfig {
                         // 그 외 모두 인증 필요 (Day 3 JPA CRUD, /chat 등)
                         .anyRequest().authenticated()
                 )
+                // 구글 OAuth2 로그인 — 성공 시 핸들러가 앱 JWT를 발급 (Day 4 B7/B8)
+                // 인가 시작: GET /oauth2/authorization/google, 콜백: /login/oauth2/code/google (자동)
+                // 처음엔 .oauth2Login(Customizer.withDefaults()) 이걸로 합니다. 핸들러는 다음 파트에서 진행됩니다.
+                .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2LoginSuccessHandler))
                 // H2 콘솔 사용을 위한 헤더 완화 (개발 프로파일만)
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

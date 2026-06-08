@@ -43,10 +43,15 @@ public class ChatController {
     public ChatResponse chat(
             @Valid @RequestBody ChatRequest req,
             @AuthenticationPrincipal UserDetails user) {
+
+        String username = user.getUsername();
         ChatResponse response = pythonClient.chat(req.prompt()).block();
         if (response == null) {
             throw new IllegalStateException("python returned null");
         }
+
+        chatLogService.save(username, req.prompt(), response.answer());
+
         return response;
     }
 }
